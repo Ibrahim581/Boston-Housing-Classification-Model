@@ -1,0 +1,93 @@
+---
+title: "Classification Model"
+author: "Ibrahim Noman"
+date: "2022-10-31"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# **What You Need**
+```{r}
+library(tidyverse)
+library(caret)
+library(kernlab)
+library(mlbench)
+```
+
+# **Data Set**
+```{r}
+data("BostonHousing2")
+Housing <- BostonHousing2
+dim(BostonHousing2)
+head(BostonHousing2)
+```
+
+```{r}
+sum(is.na(BostonHousing2))
+set.seed(100)
+```
+
+# **Creating a training set**
+```{r}
+Training.Index <- createDataPartition(Housing$town, p = 0.8, list = FALSE)
+Training.Set <- Housing[Training.Index,]
+Testing.Set <- Housing[-Training.Index,]
+```
+
+# **Building a training model**
+```{r}
+Model <- train(town ~ ., data = Training.Set,
+               method = "svmPoly",
+               na.action = na.omit,
+               preProcess=c("scale","center"),
+               trControl= trainControl(method="none"),
+               tuneGrid = data.frame(degree=1,scale=1,C=1)
+)
+```
+
+# **CV Model**
+```{r}
+Model.cv <- train(town ~ ., data = Training.Set,
+                  method = "svmPoly",
+                  na.action = na.omit,
+                  preProcess=c("scale","center"),
+                  trControl= trainControl(method="cv", number=10),
+                  tuneGrid = data.frame(degree=1,scale=1,C=1)
+)
+```
+
+# **Prediction**
+```{r}
+Model.Training <- predict(Model, Training.Set)
+```
+
+```{r}
+Model.Testing <- predict(Model, Testing.Set)
+```
+
+```{r}
+Model.cv <- predict(Model.cv, Training.Set)
+```
+
+```{r}
+Model.training.confusion <-confusionMatrix(Model.Training, Training.Set$town)
+```
+
+```{r}
+Model.testing.confusion <-confusionMatrix(Model.Testing, Testing.Set$town)
+```
+
+```{r}
+Model.cv.confusion <-confusionMatrix(Model.cv, Training.Set$town)
+```
+
+# **Results**
+```{r}
+print(Model.training.confusion)
+print(Model.testing.confusion)
+print(Model.cv.confusion)
+```
+
